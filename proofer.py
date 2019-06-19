@@ -3,15 +3,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import spidev
+# TODO: include spi setup in readme
 
-# use pigpio for pwm
+# must first run 'sudo pigpiod'
+#import pigpio
+import RPi.GPIO as GPIO
 
-CHIP_SELECT_PIN = # raspberry pi chip select pin for temp sensor
-VCC_PIN = # raspberry pi power pin (3.3v) for temp sensor
-GND_PIN = # raspberry pi ground pin for temp sensor
+PWM_PIN = 12 # raspberry pi pwm pin for dimmer
+ZC_PIN = 15 # zero-crossing interrupt for dimmer
 
-#PWM_PIN = # raspberry pi pwm pin for dimmer
-#ZC_PIN = # zero-crossing interrupt for dimmer
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(PWM_PIN, GPIO.OUT)
+GPIO.setup(ZC_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 class MAX31855K(object):
     # Object containing data and methods for MAX31855K thermocouple
@@ -19,15 +22,29 @@ class MAX31855K(object):
     def __init__():
         self.spi = spidev.SpiDev()
         bus = 0
-        device = 1
+        device = 0
         self.spi.open(bus, device)
 
     def readTempC():
         n = 4
-        data = self.spi.readbytes(n)
-        value = data >> 18 # Shift off all but the temperature data
+        data = self.spi.readbytes(n) # length 4 list of bytes (in decimal)
 
-        temp = value/4.0
+        data = (data[0] << 3*8) + (data[1] << 2*8) + (data[2] << 8) + data[3]
+
+        if __debug__():
+            if data == 0:
+                print('Null data.')
+
+            if (data & (1 << 0)) == 1:
+                print('Open circuit fault.')
+
+            if (data & (1 << 1)) == 1:
+                print('Thermocouple short-circuited to GND.')
+
+            if (data & (1 << 2)) == 1:
+                print('Thermocouple short-circuited to Vcc.')
+
+        temp = ( data >> 18)/4.0 # Shift off all but the temperature data, divide by 4
 
         return temp
 
@@ -38,7 +55,8 @@ class MAX31855K(object):
     # Object containing data and methods for RobotDyn Dimmer
     # See https://github.com/RobotDynOfficial/RBDDimmer
 #    def __init__():
-
+#        GPIO.add_event_detect(ZC_PIN, GPIO.RISING)
+#        GPIO.add_event_callback(ZC_PIN, buttonEventHandler, bouncetime=100)
 
 #    def begin():
 
@@ -83,7 +101,7 @@ if __name__ == "__main__":
         while(true):
         # execute control loop
         # read temperature
-        temp =
+        temp = thermocouple.readTempC()
         ierr = ierr + err*dt
         olderr = err
         err = setpoint - temp
@@ -105,3 +123,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         # TODO: turn off light
         thermocouple.close()
+        GPIO.cleanup()
