@@ -1,6 +1,7 @@
+#!/usr/bin/env python2
 import time
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import spidev
 # TODO: include spi setup in readme
@@ -19,19 +20,19 @@ GPIO.setup(ZC_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 class MAX31855K(object):
     # Object containing data and methods for MAX31855K thermocouple
     # See https://github.com/sparkfun/SparkFun_MAX31855K_Thermocouple_Breakout_Arduino_Library
-    def __init__():
+    def __init__(self):
         self.spi = spidev.SpiDev()
         bus = 0
         device = 0
         self.spi.open(bus, device)
 
-    def readTempC():
+    def readTempC(self):
         n = 4
         data = self.spi.readbytes(n) # length 4 list of bytes (in decimal)
 
         data = (data[0] << 3*8) + (data[1] << 2*8) + (data[2] << 8) + data[3]
 
-        if __debug__():
+        if __debug__:
             if data == 0:
                 print('Null data.')
 
@@ -48,22 +49,22 @@ class MAX31855K(object):
 
         return temp
 
-    def close():
+    def close(self):
         self.spi.close()
 
 #class RBDDimmer(object):
     # Object containing data and methods for RobotDyn Dimmer
     # See https://github.com/RobotDynOfficial/RBDDimmer
-#    def __init__():
+#    def __init__(self):
 #        GPIO.add_event_detect(ZC_PIN, GPIO.RISING)
 #        GPIO.add_event_callback(ZC_PIN, buttonEventHandler, bouncetime=100)
 
-#    def begin():
+#    def begin(self):
 
 
-#    def setPower():
+#    def setPower(self):
 
-def pid(err, ierr, derr, Kp, Ki, Kd)
+def pid(err, ierr, derr, Kp, Ki, Kd):
 
     if err <= 0:
         return 0
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     # initialize actuator object
     # initialize control loop object
     thermocouple = MAX31855K()
-    dimmer = RBDDimmer()
+    #dimmer = RBDDimmer()
 
     Kp = 10
     Ki = 5
@@ -95,30 +96,30 @@ if __name__ == "__main__":
 
     setpoint = 27
 
-    dt = 1
+    dt = 1.0
 
     try:
-        while(true):
-        # execute control loop
-        # read temperature
-        temp = thermocouple.readTempC()
-        ierr = ierr + err*dt
-        olderr = err
-        err = setpoint - temp
-        derr = (err - olderr)/dt
+        while(True):
+            # execute control loop
+            # read temperature
+            temp = thermocouple.readTempC()
+            ierr = ierr + err*dt
+            olderr = err
+            err = setpoint - temp
+            derr = (err - olderr)/dt
 
-        print('temp = {}'.format(temp))
-        print('err = {}'.format(err))
-        print('int err = {}'.format(ierr))
-        print('der err = {}'.format(derr))
+            print('temp = {}'.format(temp))
+            print('err = {}'.format(err))
+            print('int err = {}'.format(ierr))
+            print('der err = {}'.format(derr))
 
-        # compute output
-        u = pid(err, derr, ierr, Kp, Ki, Kd)
-        print('u = {}'.format(u))
-        # dim
+            # compute output
+            u = pid(err, derr, ierr, Kp, Ki, Kd)
+            print('u = {}'.format(u))
+            # dim
         
-        # sleep for the rest of the loop dt
-        time.sleep(dt)
+            # sleep for the rest of the loop dt
+            time.sleep(dt)
 
     except KeyboardInterrupt:
         # TODO: turn off light
