@@ -52,17 +52,20 @@ class MAX31855K(object):
     def close(self):
         self.spi.close()
 
-#class RBDDimmer(object):
+class RBDDimmer(object):
     # Object containing data and methods for RobotDyn Dimmer
     # See https://github.com/RobotDynOfficial/RBDDimmer
-#    def __init__(self):
-#        GPIO.add_event_detect(ZC_PIN, GPIO.RISING)
-#        GPIO.add_event_callback(ZC_PIN, buttonEventHandler, bouncetime=100)
+    def __init__(self):
+        GPIO.add_event_detect(ZC_PIN, GPIO.RISING)
+        GPIO.add_event_callback(ZC_PIN, zeroCrossEventHandler, bouncetime=100)
 
 #    def begin(self):
 
 
 #    def setPower(self):
+
+def zeroCrossEventHandler():
+    print('zc')
 
 def pid(err, ierr, derr, Kp, Ki, Kd):
 
@@ -84,7 +87,7 @@ if __name__ == "__main__":
     # initialize actuator object
     # initialize control loop object
     thermocouple = MAX31855K()
-    #dimmer = RBDDimmer()
+    dimmer = RBDDimmer()
 
     Kp = 10
     Ki = 5
