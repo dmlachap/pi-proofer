@@ -52,20 +52,51 @@ class MAX31855K(object):
     def close(self):
         self.spi.close()
 
+INTERRUPT_ENABLE = False
+ZC_COUNT = 0
+ZC_COUNT_ON = 0
+ZC_COUNT_OFF = 100
+PWM_ON = False
 class RBDDimmer(object):
     # Object containing data and methods for RobotDyn Dimmer
     # See https://github.com/RobotDynOfficial/RBDDimmer
-    def __init__(self):
+    def __init__(self, ac_freq=50):
+        self.ac_freq = ac_freq
         GPIO.add_event_detect(ZC_PIN, GPIO.RISING, callback=zeroCrossEventHandler, bouncetime=100)
         #GPIO.add_event_callback(ZC_PIN, zeroCrossEventHandler, bouncetime=100)
 
-#    def begin(self):
+    def begin(self):
+        INTERRUPT_ENABLE = True
 
+    def setPower(self, power):
+        if power > 100:
+            power = 100
+        elif power < 0:
+            power = 0
 
-#    def setPower(self):
+        pwm_period = 2*ac_freq
+        ZC_COUNT_ON = round((power/100.0)*pwm_period)
+        ZC_COUNT_OFF = pwm_period - ZC_COUNT_ON
+
+    def close(self):
+        self.setPower(0)
 
 def zeroCrossEventHandler():
-    print('zc')
+    if INTERRUPT_ENABLE:
+        # print('zc')
+        ZC_COUNT = ZC_COUNT + 1
+        if PWM_ON and ZC_COUNT >= ZC_COUNT_ON:
+            # turn off, reset count
+            GPIO.output(PWM_PIN, GPIO.LOW)
+            ZC_COUNT = 0
+            PWM_ON = False
+
+        if not PWM_ON and ZC_COUNT >= ZC_COUNT_OFF:
+            # turn on, reset count
+            GPIO.output(PWM_PIN, GPIO.HIGH)
+            ZC_COUNT = 0
+            PWM_ON = True
+
 
 def pid(err, ierr, derr, Kp, Ki, Kd):
 
@@ -88,6 +119,7 @@ if __name__ == "__main__":
     # initialize control loop object
     thermocouple = MAX31855K()
     dimmer = RBDDimmer()
+    dimmer.begin()
 
     Kp = 10
     Ki = 5
@@ -120,11 +152,11 @@ if __name__ == "__main__":
             u = pid(err, derr, ierr, Kp, Ki, Kd)
             print('u = {}'.format(u))
             # dim
-        
+            dimmer.setPower(u)
             # sleep for the rest of the loop dt
             time.sleep(dt)
 
     except KeyboardInterrupt:
-        # TODO: turn off light
+        dimmer.close()
         thermocouple.close()
         GPIO.cleanup()
