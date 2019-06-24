@@ -56,8 +56,8 @@ class RBDDimmer(object):
     # Object containing data and methods for RobotDyn Dimmer
     # See https://github.com/RobotDynOfficial/RBDDimmer
     def __init__(self):
-        GPIO.add_event_detect(ZC_PIN, GPIO.RISING)
-        GPIO.add_event_callback(ZC_PIN, zeroCrossEventHandler, bouncetime=100)
+        GPIO.add_event_detect(ZC_PIN, GPIO.RISING, callback=zeroCrossEventHandler, bouncetime=100)
+        #GPIO.add_event_callback(ZC_PIN, zeroCrossEventHandler, bouncetime=100)
 
 #    def begin(self):
 
